@@ -172,25 +172,3 @@ class Dragome:
         plt.tight_layout()
         plt.savefig(Save_fig)
         print (f'Out Fig is {Save_fig}')
-
-## 读取文件
-a = Dragome.Read_result_file('flower.txt','AP2_cds_cd_search.txt')
-
-## 筛选
-Select_df = a[ (a['score']<=5) & (a['Category']<=2)]
-Select_df = Select_df.reset_index(drop=True)
-
-Select_gene = set(Select_df['gene'])
-Target_df = pd.DataFrame
-Target_gene =[]
-with open ('Lch.id','r') as f:
-    for line in f:
-        gene = line.strip()
-        for index, row in Select_df.iterrows():
-            if row['gene']  == gene:
-                Target_gene.append(index)
-
-## 绘图
-for index in Target_gene:
-    Series = Select_df.iloc[index,:]
-    Dragome.Draw(Series)
