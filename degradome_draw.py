@@ -2,10 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.patches as patches
-from matplotlib import font_manager
 import re
 import os
-import matplotlib as mpl
+
 
 class Dragome:
     @staticmethod
@@ -84,27 +83,43 @@ class Dragome:
         ## 生成信息矩阵
         Message_df = pd.DataFrame(Message)
         Message_df.columns=["gene","miRNA","T_plot_message_file","score","Category","p_value","miRNA_target","T_plot_fig_message_file"]
-        
+        Message_df.set_index("gene")
         ## 匹配保守结构域
+        # Conserved_gene = set(Conserved_df['Conserved_Gene'])
+        # for gene in Conserved_gene:
+        #     Select_df = Conserved_df[Conserved_df['Conserved_Gene']==gene]
+        #     Series = Message_df.loc[Message_df['gene']==gene]
+        #     if Series.empty:
+        #         continue
+        #     for i in range(len(Select_df)):
+        #         Conserved_start = f'Conserved{i+1}_start'
+        #         Conserved_end = f'Conserved{i+1}_end'
+        #         print (Series)
+        #         Series.loc[:,Conserved_start] = Select_df.iloc[i]['Conserved_start']
+        #         Message_df.loc[gene:,Conserved_end] = Select_df.iloc[i]['Conserved_end']
+        #         Message_df.loc[Message_df['gene']==gene].Conserved_end = Select_df.iloc[i]['Conserved_end']
+        #         Message_df.loc[Message_df['gene']==gene, Conserved_start] = Select_df.iloc[i]['Conserved_start']
+        # Message_df.to_csv(Outfile,index=False)
         Conserved_gene = set(Conserved_df['Conserved_Gene'])
         for gene in Conserved_gene:
             Select_df = Conserved_df[Conserved_df['Conserved_Gene']==gene]
-            for i in  range(len(Select_df)):
-                Conserved_start = f'Conserved{i+1}_start'
-                Conserved_end = f'Conserved{i+1}_end'
-                Message_df.loc[:,Conserved_start] = Select_df.iloc[i]['Conserved_start']
-                Message_df.loc[:,Conserved_end] = Select_df.iloc[i]['Conserved_end']
-        Message_df.to_csv(Outfile,index=False)
+            if gene in Message_df['gene'].values:
+                Series = Message_df.loc[Message_df['gene']==gene]
+                if Series.empty:
+                    continue
+                for i in range(len(Select_df)):
+                    Conserved_start = f'Conserved{i+1}_start'
+                    Conserved_end = f'Conserved{i+1}_end'
+                    Message_df.loc[Message_df['gene']==gene,Conserved_start] = Select_df.iloc[i]['Conserved_start']
+                    Message_df.loc[Message_df['gene']==gene,Conserved_end] = Select_df.iloc[i]['Conserved_end']
+        Message_df.to_csv(Outfile, index=False)
         return Message_df
     @staticmethod
     ## 绘图
     def Draw(Series):
-        
-        ## 将所有文字保存为text，而不是保存成曲线
+        # 读取整理的数据
         mpl.rcParams['pdf.fonttype'] = 42
         mpl.rcParams['ps.fonttype'] = 42
-
-        # 读取整理的数据
         gene,miRNA,Draw_data_file,score,Category,p_value,miRNA_target,Save_fig,Conserved1_start,Conserved1_end,Conserved2_start,Conserved2_end = Series[0:12]
         data = pd.read_csv(Draw_data_file,sep='\t')
         ###################################################################################################
@@ -172,3 +187,25 @@ class Dragome:
         plt.tight_layout()
         plt.savefig(Save_fig)
         print (f'Out Fig is {Save_fig}')
+
+## 读取文件
+a = Dragome.Read_result_file('flower.txt','AP2_cds_cd_search.txt')
+
+## 筛选
+Select_df = a[ (a['score']<=5) & (a['Category']<=2)]
+Select_df = Select_df.reset_index(drop=True)
+
+Select_gene = set(Select_df['gene'])
+Target_df = pd.DataFrame
+Target_gene =[]
+with open ('Lch.id','r') as f:
+    for line in f:
+        gene = line.strip()
+        for index, row in Select_df.iterrows():
+            if row['gene']  == gene:
+                Target_gene.append(index)
+
+## 绘图
+for index in Target_gene:
+    Series = Select_df.iloc[index,:]
+    Dragome.Draw(Series)
